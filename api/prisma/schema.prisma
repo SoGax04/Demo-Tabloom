@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Folder {
+  id        String     @id @default(uuid())
+  name      String
+  parentId  String?
+  parent    Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id])
+  children  Folder[]   @relation("FolderHierarchy")
+  sortOrder Int        @default(0)
+  isDeleted Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  bookmarks Bookmark[]
+}
+
+model Tag {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  bookmarks BookmarkTag[]
+}
+
+model Bookmark {
+  id        String        @id @default(uuid())
+  url       String
+  title     String?
+  note      String?
+  folderId  String?
+  folder    Folder?       @relation(fields: [folderId], references: [id])
+  isDeleted Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  tags      BookmarkTag[]
+
+  @@index([url])
+  @@index([folderId])
+  @@index([updatedAt])
+}
+
+model BookmarkTag {
+  bookmarkId String
+  tagId      String
+  bookmark   Bookmark @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, tagId])
+}
+
+model ExportJob {
+  id           String    @id @default(uuid())
+  status       String    @default("running")
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  errorMessage String?
+}

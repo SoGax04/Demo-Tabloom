@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tabloom-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tabloom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tabloom_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-tabloom}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tabloom}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: tabloom-api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tabloom}:${POSTGRES_PASSWORD:-tabloom_secret}@postgres:5432/${POSTGRES_DB:-tabloom}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+      - export_data:/app/exports
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: tabloom-web
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  export_data:
