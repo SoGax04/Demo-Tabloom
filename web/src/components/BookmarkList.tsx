@@ -23,6 +23,7 @@ function BookmarkItem({ bookmark, selected, onSelect }: BookmarkItemProps) {
           checked={selected}
           onChange={(e) => onSelect(bookmark.id, e.target.checked)}
         />
+        <span className="custom-checkbox"></span>
       </label>
       <div className="bookmark-content">
         <a
@@ -101,6 +102,7 @@ export function BookmarkList({ bookmarks }: BookmarkListProps) {
             checked={selectedIds.size === bookmarks.length && bookmarks.length > 0}
             onChange={handleSelectAll}
           />
+          <span className="custom-checkbox"></span>
           Select all ({selectedIds.size}/{bookmarks.length})
         </label>
         {selectedIds.size > 0 && (

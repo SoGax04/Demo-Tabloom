@@ -23,6 +23,7 @@ function App() {
   if (loading) {
     return (
       <div className="app loading">
+        <div className="loading-spinner"></div>
         <p>Loading bookmarks...</p>
       </div>
     );
@@ -31,8 +32,15 @@ function App() {
   if (error) {
     return (
       <div className="app error">
+        <div className="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-alert">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
         <p>Error: {error}</p>
-        <button type="button" onClick={refresh}>
+        <button type="button" onClick={refresh} className="refresh-button">
           Retry
         </button>
       </div>
@@ -50,10 +58,23 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Tabloom</h1>
+        <div className="header-logo">
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-logo">
+             <path d="M2 12h5"></path>
+             <path d="M17 12h5"></path>
+             <path d="M7 12v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-5"></path>
+             <path d="M12 2l-5 5v5h10V7L12 2z"></path>
+           </svg>
+           <h1>Tabloom</h1>
+        </div>
         <div className="header-meta">
           <span>Last updated: {new Date(data.exportedAt).toLocaleString()}</span>
           <button type="button" onClick={refresh} className="refresh-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-refresh">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
             Refresh
           </button>
         </div>
