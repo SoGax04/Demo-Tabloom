@@ -1,202 +1,60 @@
-# Tabloom - Bookmark Management System
+***
 
-PostgreSQLでブックマーク情報を管理し、JSONエクスポート機能と閲覧Webサイトを提供するシステム。
+### １．システム概要
+Tabloom は、ブックマークを PostgreSQL で管理し、API から JSON エクスポートを提供する管理・閲覧システムです。  
+管理 API でブックマーク/フォルダ/タグを CRUD し、エクスポート JSON を生成します。  
+閲覧 Web は JSON を取得して、検索・フォルダ/タグでの絞り込みを行い、新規タブで開く操作を提供します。
 
-## 技術スタック
+### ２．技術スタック
+- Web: React 18 / Vite / TypeScript
+- API: Node.js 20 / Express / Prisma / Zod / JWT
+- DB: PostgreSQL 16
+- 実行環境: Docker / docker compose
+- 付属設定: Nginx リバースプロキシ設定（`nginx/nginx.conf`）
 
-- **バックエンドAPI**: Node.js + Express + TypeScript
-- **フロントエンド**: React + TypeScript + Vite
-- **データベース**: PostgreSQL 16
-- **ORM**: Prisma
-- **認証**: JWT (管理APIのみ)
-- **コンテナ**: Docker + docker-compose
-
-## セットアップ
-
-### 1. 環境変数の設定
-
-```bash
+### ３．セットアップ
+1) 環境変数（任意）
+```
 cp .env.example .env
-# .env ファイルを編集してJWT_SECRETなどを変更
 ```
-
-### 2. Docker Compose で起動
-
-```bash
-docker compose up --build
+2) 起動
 ```
-
-### 3. データベースの初期化
-
-初回起動時、APIコンテナ内でマイグレーションとシードを実行：
-
-```bash
-docker compose exec api npx prisma migrate deploy
+docker compose up -d --build
+```
+3) DB 初期化（初回のみ）
+```
+docker compose exec api npm run db:push
 docker compose exec api npm run db:seed
 ```
+※ マイグレーション運用する場合は `npm run db:migrate` を使用してください。
 
-## アクセス
+### ４．アクセス
+- Web: http://localhost:5173
+- API: http://localhost:3000
+- Export JSON: http://localhost:3000/api/export/json
+- Health: http://localhost:3000/api/health
 
-- **Web UI**: http://localhost:5173
-- **API**: http://localhost:3000
-- **API Health Check**: http://localhost:3000/api/health
+### ５．使い方
+- 初期シードで `admin@tabloom.local` / `admin123` が作成されます。`POST /api/auth/login` で JWT を取得し、`Authorization: Bearer <token>` を付与して各 API を利用します。
+- `POST /api/auth/register` は「管理者が未作成のときのみ」利用できます。
+- ブックマーク管理は `POST /api/bookmarks` / `PUT /api/bookmarks/:id` / `DELETE /api/bookmarks/:id` を使用します（フォルダ・タグは `/api/folders` / `/api/tags`）。
+- エクスポートは `POST /api/export/trigger`、即時取得は `GET /api/export/json?fresh=true` を使用します。
+- 閲覧 Web では検索/フォルダ/タグで絞り込み、一覧からブックマークを新規タブで開けます。
 
-## API エンドポイント
-
-### 公開エンドポイント
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| GET | `/api/export/json` | ブックマークのJSONエクスポート |
-| GET | `/api/health` | ヘルスチェック |
-
-### 認証エンドポイント
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| POST | `/api/auth/login` | ログイン |
-| POST | `/api/auth/register` | 管理者登録（初回のみ） |
-
-### ブックマーク（要認証）
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| GET | `/api/bookmarks` | 一覧取得 |
-| POST | `/api/bookmarks` | 登録 |
-| GET | `/api/bookmarks/:id` | 詳細取得 |
-| PUT | `/api/bookmarks/:id` | 更新 |
-| DELETE | `/api/bookmarks/:id` | 削除 |
-
-### フォルダ（要認証）
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| GET | `/api/folders` | 一覧取得 |
-| POST | `/api/folders` | 作成 |
-| PUT | `/api/folders/:id` | 更新 |
-| DELETE | `/api/folders/:id` | 削除 |
-
-### タグ（要認証）
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| GET | `/api/tags` | 一覧取得 |
-| POST | `/api/tags` | 作成 |
-| PUT | `/api/tags/:id` | 更新 |
-| DELETE | `/api/tags/:id` | 削除 |
-
-### エクスポート
-
-| Method | Endpoint | 説明 |
-|--------|----------|------|
-| GET | `/api/export/json` | 公開: 最新JSONを取得 |
-| POST | `/api/export/trigger` | 要認証: エクスポート実行 |
-| GET | `/api/export/jobs` | 要認証: エクスポート履歴 |
-
-## 使い方
-
-### ログイン
-
-シードデータで作成される管理者アカウント：
-- Email: `admin@tabloom.local`
-- Password: `admin123`
-
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "admin@tabloom.local", "password": "admin123"}'
+### ６．ディレクトリ構成
 ```
-
-### ブックマークの作成
-
-```bash
-curl -X POST http://localhost:3000/api/bookmarks \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"url": "https://example.com", "title": "Example Site"}'
-```
-
-### JSONエクスポートの取得（公開）
-
-```bash
-curl http://localhost:3000/api/export/json
-```
-
-## 開発
-
-### APIの開発
-
-```bash
-cd api
-npm install
-npm run dev
-```
-
-### Webの開発
-
-```bash
-cd web
-npm install
-npm run dev
-```
-
-### Prismaコマンド
-
-```bash
-# マイグレーション作成
-docker compose exec api npx prisma migrate dev --name your_migration_name
-
-# スキーマ変更の適用
-docker compose exec api npx prisma db push
-
-# Prisma Studio起動
-docker compose exec api npx prisma studio
-```
-
-## ディレクトリ構成
-
-```
-tabloom/
+.
+├── api/                # 管理 API（Express + Prisma）
+│   ├── src/            # ルーティング/認証/バリデーション
+│   ├── prisma/         # スキーマ/シード
+│   └── exports/        # エクスポート JSON の保存先
+├── web/                # 閲覧 Web（React + Vite）
+│   └── src/
+├── nginx/              # リバースプロキシ設定
+├── scripts/            # DB 初期化補助スクリプト
 ├── docker-compose.yml
-├── api/                          # 管理API + JSONエクスポート
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── prisma/
-│   │   ├── schema.prisma         # DBスキーマ
-│   │   └── seed.ts               # シードデータ
-│   └── src/
-│       ├── index.ts              # エントリポイント
-│       ├── routes/
-│       │   ├── auth.ts           # 認証
-│       │   ├── bookmarks.ts      # ブックマークCRUD
-│       │   ├── folders.ts        # フォルダCRUD
-│       │   ├── tags.ts           # タグCRUD
-│       │   └── export.ts         # JSONエクスポート
-│       ├── middleware/
-│       │   └── auth.ts           # JWT認証ミドルウェア
-│       ├── services/
-│       │   └── export.ts         # エクスポートロジック
-│       └── utils/
-│           └── validation.ts     # バリデーション
-├── web/                          # 閲覧Webサイト
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── vite.config.ts
-│   └── src/
-│       ├── main.tsx
-│       ├── App.tsx
-│       ├── App.css
-│       ├── components/
-│       │   ├── BookmarkList.tsx
-│       │   ├── FolderTree.tsx
-│       │   ├── SearchBar.tsx
-│       │   └── TagFilter.tsx
-│       ├── hooks/
-│       │   └── useBookmarks.ts
-│       └── types/
-│           └── bookmark.ts
-└── nginx/
-    └── nginx.conf
+├── .env.example
+└── document.txt        # 要件定義（ドラフト）
 ```
+
+***
